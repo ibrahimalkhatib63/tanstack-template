@@ -10,7 +10,9 @@ or produce scans, IPs, or results for any specific target. Any real-world use of
 the techniques below requires explicit written authorization from the system
 owner (a signed pentest/bug-bounty scope, or a system you personally own/control).
 Unauthorized access to systems is illegal in essentially every jurisdiction
-(e.g., UAE Federal Law No. 5 of 2012, US CFAA, etc.) and this skill must not be
+(e.g., UAE Federal Decree-Law No. 34 of 2021, Article 73 — which repealed and
+replaced Federal Law No. 5 of 2012 effective January 2, 2022 — US CFAA, etc.)
+and this skill must not be
 used to plan or execute activity against a target without that authorization.
 
 ## 1. Linux Architecture
@@ -19,12 +21,17 @@ Layers from hardware up to applications:
 
 | Layer | Role |
 |---|---|
-| Hardware (Ring 0) | CPU, RAM, disk, NIC |
-| Kernel (Ring 0) | Memory, process, filesystem, network management |
+| Hardware | CPU, RAM, disk, NIC — the physical substrate; rings don't apply to it |
+| Kernel (Ring 0 on x86) | Memory, process, filesystem, network management — runs in the most privileged CPU mode |
 | System calls | Bridge between programs and kernel (`read()`, `write()`, `fork()`) |
 | Libraries (glibc) | Shared functions programs use (`malloc()`, `printf()`) |
 | Shell (bash/zsh) | Command interface |
-| User space (Ring 3) | User applications (browsers, security tools, etc.) |
+| User space (Ring 3 on x86) | User applications (browsers, security tools, etc.) — least privileged mode |
+
+> Note: "Ring 0/3" is x86-specific CPU privilege-level terminology describing
+> which *mode* code executes in (kernel vs. user), not a property of the
+> hardware itself. Other architectures (ARM, RISC-V) use different privilege
+> models and may not use "ring" terminology at all.
 
 ## 2. Core Linux Commands
 
