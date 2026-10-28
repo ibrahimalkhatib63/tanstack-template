@@ -131,8 +131,8 @@ Follow these steps to set up and run the project locally:
    ```
    
    Then edit the `.env` file with your credentials:
-   - Required: Add your Anthropic API key (`VITE_ANTHROPIC_API_KEY`)
-   - Optional: Add Convex URL if using database features (`VITE_CONVEX_URL`)
+   - Required: Convex URL (`VITE_CONVEX_URL`)
+   - Required: set server secrets on Convex, never in `.env` (see below)
    - Optional: Add Sentry credentials for error monitoring (`VITE_SENTRY_DSN`, `SENTRY_AUTH_TOKEN`)
 
 4. **Start the development server**
@@ -201,9 +201,10 @@ If the Sentry environment variables are not defined, the application will run wi
 
 You can generate and manage your Anthropic API keys through the [Anthropic Console](https://console.anthropic.com/login).
 
-```
-# .env file
-VITE_ANTHROPIC_API_KEY=your_anthropic_api_key
+The key is used only by a Convex action. Never put it in a `VITE_` variable: those are bundled into the client.
+
+```bash
+npx convex env set ANTHROPIC_API_KEY your_anthropic_api_key
 ```
 
 ### Convex Configuration (Optional)

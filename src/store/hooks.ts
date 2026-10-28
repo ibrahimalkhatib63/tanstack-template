@@ -1,7 +1,7 @@
 import { useStore } from '@tanstack/react-store';
 import { v4 as uuidv4 } from 'uuid';
 import { actions, selectors, store, type Conversation } from './store';
-import { useMutation, useQuery } from 'convex/react';
+import { useConvexAuth, useMutation, useQuery } from 'convex/react';
 import { api } from '../../convex/_generated/api';
 import type { Id } from '../../convex/_generated/dataModel';
 import type { Message } from '../utils/ai';
@@ -47,10 +47,11 @@ export function useConversations() {
   const currentConversationId = useStore(store, s => selectors.getCurrentConversationId(s));
   const currentConversation = useStore(store, s => selectors.getCurrentConversation(s));
   
-  // Only use Convex if it's available
-  const convexConversations = isConvexAvailable 
-    ? useQuery(api.conversations.list) || []
-    : null;
+  // Only query Convex once the user is signed in
+  const { isAuthenticated } = isConvexAvailable ? useConvexAuth() : { isAuthenticated: false };
+  const convexConversations = isConvexAvailable
+    ? useQuery(api.conversations.list, isAuthenticated ? {} : 'skip')
+    : undefined;
   
   // Convex mutations (only if Convex is available)
   const createConversation = isConvexAvailable ? useMutation(api.conversations.create) : null;
@@ -60,7 +61,14 @@ export function useConversations() {
   
   // Convert Convex conversations to local format if available
   useEffect(() => {
-    if (isConvexAvailable && convexConversations && convexConversations.length > 0) {
+    if (!isConvexAvailable) return;
+    if (!isAuthenticated) {
+      // Signed out: never leave another user's conversations in memory
+      actions.setConversations([]);
+      actions.setCurrentConversationId(null);
+      return;
+    }
+    if (convexConversations) {
       const formattedConversations: Conversation[] = convexConversations.map(conv => ({
         id: conv._id,
         title: conv.title,
@@ -69,7 +77,7 @@ export function useConversations() {
       
       actions.setConversations(formattedConversations);
     }
-  }, [convexConversations]);
+  }, [convexConversations, isAuthenticated]);
   
   return {
     conversations,

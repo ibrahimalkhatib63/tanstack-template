@@ -1,6 +1,9 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
-import { Settings } from 'lucide-react'
+import { Apple, Settings } from 'lucide-react'
+import { useAction, useConvexAuth } from 'convex/react'
+import { useAuthActions } from '@convex-dev/auth/react'
+import { api } from '../../convex/_generated/api'
 import { 
   SettingsDialog, 
   ChatMessage, 
@@ -10,9 +13,9 @@ import {
   WelcomeScreen 
 } from '../components'
 import { useConversations, useAppState, store, actions } from '../store'
-import { genAIResponse, type Message } from '../utils'
+import type { Message } from '../utils'
 
-function Home() {
+function Chat() {
   const {
     conversations,
     currentConversationId,
@@ -29,8 +32,7 @@ function Home() {
   // Memoize messages to prevent unnecessary re-renders
   const messages = useMemo(() => currentConversation?.messages || [], [currentConversation]);
 
-  // Check if Anthropic API key is defined
-  const isAnthropicKeyDefined = Boolean(import.meta.env.VITE_ANTHROPIC_API_KEY);
+  const generate = useAction(api.ai.generate)
 
   // Local state
   const [input, setInput] = useState('')
@@ -72,44 +74,15 @@ function Home() {
         }
       }
 
-      // Get AI response
-      const response = await genAIResponse({
-        data: {
-          messages: [...messages, userMessage],
-          systemPrompt,
-        },
+      // Get AI response from the server (the API key never reaches the client)
+      const text = await generate({
+        messages: [...messages, userMessage],
+        systemPrompt: systemPrompt?.value,
       })
-
-      const reader = response.body?.getReader()
-      if (!reader) {
-        throw new Error('No reader found in response')
-      }
-
-      const decoder = new TextDecoder()
-
-      let done = false
-      let newMessage = {
+      const newMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant' as const,
-        content: '',
-      }
-      while (!done) {
-        const out = await reader.read()
-        done = out.done
-        if (!done) {
-          try {
-            const json = JSON.parse(decoder.decode(out.value))
-            if (json.type === 'content_block_delta') {
-              newMessage = {
-                ...newMessage,
-                content: newMessage.content + json.delta.text,
-              }
-              setPendingMessage(newMessage)
-            }
-          } catch (e) {
-            console.error('Error parsing streaming response:', e)
-          }
-        }
+        content: text,
       }
 
       setPendingMessage(null)
@@ -124,11 +97,11 @@ function Home() {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant' as const,
-        content: 'Sorry, I encountered an error generating a response. Please set the required API keys in your environment variables.',
+        content: 'Sorry, I encountered an error generating a response.',
       }
       await addMessage(conversationId, errorMessage)
     }
-  }, [messages, getActivePrompt, addMessage]);
+  }, [messages, getActivePrompt, addMessage, generate]);
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
@@ -258,12 +231,6 @@ function Home() {
 
       {/* Main Content */}
       <div className="flex flex-col flex-1">
-        {!isAnthropicKeyDefined && (
-          <div className="w-full max-w-3xl px-2 py-2 mx-auto mt-4 mb-2 font-medium text-center text-white bg-orange-500 rounded-md">
-            <p>This app requires an Anthropic API key to work properly.</p> 
-            <p>Update your <code>.env</code> file or get a <a href='https://console.anthropic.com/settings/keys' className='underline'>new Anthropic key</a>.</p>
-          </div>
-        )}
         {error && (
           <p className="w-full max-w-3xl p-4 mx-auto font-bold text-orange-500">{error}</p>
         )}
@@ -309,6 +276,28 @@ function Home() {
       />
     </div>
   )
+}
+
+function SignIn() {
+  const { signIn } = useAuthActions()
+  return (
+    <div className="flex flex-col items-center justify-center h-screen gap-6 bg-gray-900">
+      <h1 className="text-3xl font-bold text-white">TanStack Chat</h1>
+      <button
+        onClick={() => void signIn('apple')}
+        className="flex items-center gap-2 px-6 py-3 font-medium text-black bg-white rounded-lg hover:opacity-90"
+      >
+        <Apple className="w-5 h-5" />
+        Sign in with Apple
+      </button>
+    </div>
+  )
+}
+
+function Home() {
+  const { isLoading, isAuthenticated } = useConvexAuth()
+  if (isLoading) return <div className="h-screen bg-gray-900" />
+  return isAuthenticated ? <Chat /> : <SignIn />
 }
 
 export const Route = createFileRoute('/')({
