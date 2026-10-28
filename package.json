@@ -6,11 +6,15 @@
     "start": "vinxi start",
     "build": "vinxi build",
     "serve": "vite preview",
-    "dev": "vinxi dev"
+    "dev": "vinxi dev",
+    "ios:sync": "vinxi build && cap sync ios",
+    "ios:open": "cap open ios"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@auth/core": "^0.41.3",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/ios": "^8.5.3",
     "@convex-dev/auth": "^0.0.96",
     "@sentry/react": "^9.5.0",
     "@sentry/vite-plugin": "^3.2.2",
@@ -39,6 +43,7 @@
     "vite-tsconfig-paths": "^5.1.4"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.3",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.3.4",

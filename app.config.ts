@@ -7,6 +7,10 @@ export default defineConfig({
   },
   server: {
     preset: 'netlify',
+    // Emit a static index.html so the same build can be bundled into the iOS app (Capacitor).
+    prerender: {
+      routes: ['/'],
+    },
   },
   vite: {
     plugins: [
