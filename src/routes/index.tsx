@@ -14,6 +14,7 @@ import {
 } from '../components'
 import { useConversations, useAppState, store, actions } from '../store'
 import type { Message } from '../utils'
+import { authorizeWithAppleNative, isNativeApp } from '../utils/appleNative'
 
 function Chat() {
   const {
@@ -280,16 +281,34 @@ function Chat() {
 
 function SignIn() {
   const { signIn } = useAuthActions()
+  const [signInError, setSignInError] = useState<string | null>(null)
+
+  const handleSignIn = async () => {
+    setSignInError(null)
+    try {
+      if (isNativeApp()) {
+        const credentials = await authorizeWithAppleNative()
+        await signIn('apple-native', credentials)
+      } else {
+        await signIn('apple')
+      }
+    } catch (e) {
+      console.error('Sign in failed:', e)
+      setSignInError('Sign in failed. Please try again.')
+    }
+  }
+
   return (
     <div className="flex flex-col items-center justify-center h-screen gap-6 bg-gray-900">
       <h1 className="text-3xl font-bold text-white">TanStack Chat</h1>
       <button
-        onClick={() => void signIn('apple')}
+        onClick={() => void handleSignIn()}
         className="flex items-center gap-2 px-6 py-3 font-medium text-black bg-white rounded-lg hover:opacity-90"
       >
         <Apple className="w-5 h-5" />
         Sign in with Apple
       </button>
+      {signInError && <p className="text-orange-500">{signInError}</p>}
     </div>
   )
 }

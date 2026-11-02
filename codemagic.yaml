@@ -1,0 +1,45 @@
+workflows:
+  ios-testflight:
+    name: iOS to TestFlight
+    max_build_duration: 45
+    instance_type: mac_mini_m2
+    integrations:
+      # Create in Codemagic: Team integrations > Developer Portal > App Store Connect API key
+      app_store_connect: codemagic
+    environment:
+      groups:
+        # Codemagic env group "app" must hold VITE_CONVEX_URL (and optionally VITE_SENTRY_DSN)
+        - app
+      node: 22
+      xcode: latest
+      vars:
+        # TODO: must match appId in capacitor.config.ts
+        BUNDLE_ID: com.example.tanstackchat
+        XCODE_PROJECT: ios/App/App.xcodeproj
+        XCODE_SCHEME: App
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: $BUNDLE_ID
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+      - name: Build web and sync to iOS
+        script: npm run ios:sync
+      - name: Apply signing profiles
+        script: xcode-project use-profiles
+      - name: Set build number
+        script: |
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" || echo 0)
+          agvtool new-version -all $((LATEST + 1))
+        working_directory: ios/App
+      - name: Build IPA
+        script: |
+          xcode-project build-ipa \
+            --project "$XCODE_PROJECT" \
+            --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

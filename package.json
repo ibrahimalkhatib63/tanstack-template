@@ -13,8 +13,9 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",
     "@auth/core": "^0.41.3",
-    "@capacitor/core": "^8.5.3",
-    "@capacitor/ios": "^8.5.3",
+    "@capacitor-community/apple-sign-in": "^7.1.0",
+    "@capacitor/core": "^7.6.10",
+    "@capacitor/ios": "^7.6.10",
     "@convex-dev/auth": "^0.0.96",
     "@sentry/react": "^9.5.0",
     "@sentry/vite-plugin": "^3.2.2",
@@ -29,6 +30,7 @@
     "@types/uuid": "^10.0.0",
     "convex": "^1.20.0",
     "highlight.js": "^11.11.1",
+    "jose": "^6.2.15",
     "lucide-react": "^0.475.0",
     "postcss": "^8.5.2",
     "react": "^19.0.0",
@@ -43,7 +45,7 @@
     "vite-tsconfig-paths": "^5.1.4"
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.5.3",
+    "@capacitor/cli": "^7.6.10",
     "@types/react": "^19.0.8",
     "@types/react-dom": "^19.0.3",
     "@vitejs/plugin-react": "^4.3.4",
