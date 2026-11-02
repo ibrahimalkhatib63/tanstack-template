@@ -1,9 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react'
 import { Apple, Settings } from 'lucide-react'
-import { useAction, useConvexAuth } from 'convex/react'
+import { useAction, useConvexAuth, useMutation } from 'convex/react'
 import { useAuthActions } from '@convex-dev/auth/react'
 import { api } from '../../convex/_generated/api'
+import type { Id } from '../../convex/_generated/dataModel'
 import { 
   SettingsDialog, 
   ChatMessage, 
@@ -34,6 +35,7 @@ function Chat() {
   const messages = useMemo(() => currentConversation?.messages || [], [currentConversation]);
 
   const generate = useAction(api.ai.generate)
+  const createReport = useMutation(api.reports.create)
 
   // Local state
   const [input, setInput] = useState('')
@@ -190,6 +192,21 @@ function Chat() {
     }
   }, [input, isLoading, createTitleFromInput, currentConversationId, createNewConversation, addMessage, processAIResponse, setLoading]);
 
+  const handleReport = useCallback(async (message: Message) => {
+    if (!currentConversationId) return
+    try {
+      await createReport({
+        conversationId: currentConversationId as Id<'conversations'>,
+        messageId: message.id,
+        reason: 'User report',
+      })
+      window.alert('Thanks. We will review this response.')
+    } catch (e) {
+      console.error('Report failed:', e)
+      window.alert('Could not send the report. Please try again.')
+    }
+  }, [currentConversationId, createReport])
+
   const handleNewChat = useCallback(() => {
     createNewConversation()
   }, [createNewConversation]);
@@ -246,7 +263,7 @@ function Chat() {
                 {[...messages, pendingMessage]
                   .filter((message): message is Message => message !== null)
                   .map((message) => (
-                    <ChatMessage key={message.id} message={message} />
+                    <ChatMessage key={message.id} message={message} onReport={handleReport} />
                   ))}
                 {isLoading && <LoadingIndicator />}
               </div>
@@ -309,6 +326,7 @@ function SignIn() {
         Sign in with Apple
       </button>
       {signInError && <p className="text-orange-500">{signInError}</p>}
+      <a href="/privacy" className="text-sm text-gray-400 underline">Privacy Policy</a>
     </div>
   )
 }

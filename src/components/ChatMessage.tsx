@@ -4,7 +4,13 @@ import rehypeSanitize from 'rehype-sanitize'
 import rehypeHighlight from 'rehype-highlight'
 import type { Message } from '../utils/ai'
 
-export const ChatMessage = ({ message }: { message: Message }) => (
+export const ChatMessage = ({
+  message,
+  onReport,
+}: {
+  message: Message
+  onReport?: (message: Message) => void
+}) => (
   <div
     className={`py-6 ${
       message.role === 'assistant'
@@ -33,6 +39,14 @@ export const ChatMessage = ({ message }: { message: Message }) => (
         >
           {message.content}
         </ReactMarkdown>
+        {message.role === 'assistant' && onReport && (
+          <button
+            onClick={() => onReport(message)}
+            className="mt-2 text-xs text-gray-500 hover:text-orange-500"
+          >
+            Report this response
+          </button>
+        )}
       </div>
     </div>
   </div>

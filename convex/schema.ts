@@ -15,6 +15,13 @@ export default defineSchema({
       })
     ),
   }).index("by_user", ["userId"]),
+  reports: defineTable({
+    userId: v.id("users"),
+    conversationId: v.id("conversations"),
+    messageId: v.string(),
+    content: v.string(),
+    reason: v.string(),
+  }).index("by_user", ["userId"]),
   // One row per user per UTC day, used to cap Claude usage.
   usage: defineTable({
     userId: v.id("users"),

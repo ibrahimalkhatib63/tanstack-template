@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import { PlusCircle, Trash2 } from 'lucide-react'
+import { useMutation } from 'convex/react'
+import { useAuthActions } from '@convex-dev/auth/react'
+import { api } from '../../convex/_generated/api'
 import { useAppState } from '../store/hooks'
 
 interface SettingsDialogProps {
@@ -11,6 +14,21 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
   const [promptForm, setPromptForm] = useState({ name: '', content: '' })
   const [isAddingPrompt, setIsAddingPrompt] = useState(false)
   const { prompts, createPrompt, deletePrompt, setPromptActive } = useAppState()
+  const { signOut } = useAuthActions()
+  const deleteAccount = useMutation(api.account.deleteAccount)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
+  const [accountError, setAccountError] = useState<string | null>(null)
+
+  const handleDeleteAccount = async () => {
+    setAccountError(null)
+    try {
+      await deleteAccount()
+      await signOut()
+    } catch (e) {
+      console.error('Delete account failed:', e)
+      setAccountError('Could not delete your account. Please try again.')
+    }
+  }
 
   const handleAddPrompt = () => {
     if (!promptForm.name.trim() || !promptForm.content.trim()) return
@@ -123,6 +141,49 @@ export function SettingsDialog({ isOpen, onClose }: SettingsDialogProps) {
               <p className="text-xs text-gray-400">
                 Create and manage custom system prompts. Only one prompt can be active at a time.
               </p>
+            </div>
+
+            {/* Account */}
+            <div className="space-y-3">
+              <h3 className="text-lg font-medium text-white">Account</h3>
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  onClick={() => void signOut()}
+                  className="px-4 py-2 text-sm font-medium text-white bg-gray-700 rounded-lg hover:bg-gray-600"
+                >
+                  Sign out
+                </button>
+                <a href="/privacy" className="text-sm text-gray-400 underline">Privacy Policy</a>
+              </div>
+              {!confirmingDelete ? (
+                <button
+                  onClick={() => setConfirmingDelete(true)}
+                  className="text-sm text-red-400 hover:text-red-300"
+                >
+                  Delete account
+                </button>
+              ) : (
+                <div className="p-3 space-y-2 border border-red-500/50 rounded-lg">
+                  <p className="text-sm text-gray-300">
+                    This permanently deletes your account and all your conversations. It cannot be undone.
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => void handleDeleteAccount()}
+                      className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-500"
+                    >
+                      Delete everything
+                    </button>
+                    <button
+                      onClick={() => setConfirmingDelete(false)}
+                      className="px-4 py-2 text-sm text-gray-300 hover:text-white"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+              {accountError && <p className="text-sm text-orange-500">{accountError}</p>}
             </div>
 
           </div>
